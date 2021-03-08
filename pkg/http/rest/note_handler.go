@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/adding"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/deleting"
+	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/entity"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/listing"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/updating"
 	"github.com/gorilla/mux"
@@ -31,7 +32,7 @@ type keyNote struct{}
 
 func (n noteHandler) MiddleWareValidateNote(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		note := listing.Note{}
+		note := entity.Note{}
 		err := note.FromJSON(r.Body)
 		if err != nil {
 			http.Error(w, "Error reading note", http.StatusBadRequest)
@@ -82,14 +83,8 @@ func (n noteHandler) GetNoteById(w http.ResponseWriter, r *http.Request) {
 }
 
 func (n noteHandler) AddNote(w http.ResponseWriter, r *http.Request) {
-	var post adding.Note
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&post); err != nil {
-		http.Error(w, "Failed to parse note", http.StatusBadRequest)
-		return
-	}
-
-	if err := n.a.AddNote(post); err != nil {
+	note := r.Context().Value(keyNote{}).(entity.Note)
+	if err := n.a.AddNote(note); err != nil {
 		http.Error(w, "Failed to add note", http.StatusBadRequest)
 		return
 	}
@@ -121,12 +116,8 @@ func (n noteHandler) EditNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	var note updating.Note
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&note); err != nil {
-		http.Error(w, "Failed to parse note", http.StatusBadRequest)
-		return
-	}
+	note := r.Context().Value(keyNote{}).(entity.Note)
+
 	_, err = n.l.FindNoteByID(uint(noteID))
 	if err != nil {
 		http.Error(w, "Failed to get note", http.StatusBadRequest)
