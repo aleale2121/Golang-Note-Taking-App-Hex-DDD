@@ -1,15 +1,18 @@
 package updating
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/entity"
+)
 
 var ErrDuplicate = fmt.Errorf("title already exist")
 
 type Service interface {
-	UpdateNote(Note) error
+	UpdateNote(note entity.Note) error
 }
 
 type Repository interface {
-	UpdateNote(Note) error
+	UpdateNote(entity.Note) error
 }
 
 type service struct {
@@ -20,7 +23,7 @@ func NewService(r Repository) Service {
 	return &service{r}
 }
 
-func (s *service) UpdateNote(note Note) error {
+func (s *service) UpdateNote(note entity.Note) error {
 	if note.Title == "" || note.Detail == "" {
 		return fmt.Errorf("invalid input")
 	}
