@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/adding"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/deleting"
@@ -17,12 +18,30 @@ type NoteHandler interface {
 	AddNote(w http.ResponseWriter, r *http.Request)
 	DeleteNote(w http.ResponseWriter, r *http.Request)
 	EditNote(w http.ResponseWriter, r *http.Request)
+	MiddleWareValidateNote(next http.Handler) http.Handler
 }
 type noteHandler struct {
 	l listing.Service
 	a adding.Service
 	d deleting.Service
 	u updating.Service
+}
+
+type keyNote struct{}
+
+func (n noteHandler) MiddleWareValidateNote(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		note := listing.Note{}
+		err := note.FromJSON(r.Body)
+		if err != nil {
+			http.Error(w, "Error reading note", http.StatusBadRequest)
+			return
+		}
+		ctx := context.WithValue(r.Context(), keyNote{}, note)
+		r = r.WithContext(ctx)
+		next.ServeHTTP(w, r)
+
+	})
 }
 
 func NewNoteHandler(l listing.Service,
