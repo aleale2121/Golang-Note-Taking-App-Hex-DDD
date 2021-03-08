@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Golang-TODO-Hex-DDD.iml" filepath="$PROJECT_DIR$/.idea/Golang-TODO-Hex-DDD.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Golang-Note-Taking-App-Hex-DDD.iml" filepath="$PROJECT_DIR$/.idea/Golang-Note-Taking-App-Hex-DDD.iml" />
     </modules>
   </component>
 </project>
