@@ -36,7 +36,7 @@ func (noteRepo *NoteRepository) Note(id uint32) (*Note, []error) {
 	return &note, errs
 }
 
-func (noteRepo *NoteRepository) UpdateClub(note *Note) (*Note, []error) {
+func (noteRepo *NoteRepository) UpdateNote(note *Note) (*Note, []error) {
 	errs := noteRepo.conn.Save(note).GetErrors()
 	if len(errs) > 0 {
 		return nil, errs
@@ -44,7 +44,7 @@ func (noteRepo *NoteRepository) UpdateClub(note *Note) (*Note, []error) {
 	return note, errs
 }
 
-func (noteRepo *NoteRepository) DeleteClub(id uint32) (*Note, []error) {
+func (noteRepo *NoteRepository) DeleteNote(id uint32) (*Note, []error) {
 	note, errs := noteRepo.Note(id)
 	if len(errs) > 0 {
 		return nil, errs
@@ -56,7 +56,7 @@ func (noteRepo *NoteRepository) DeleteClub(id uint32) (*Note, []error) {
 	return note, errs
 }
 
-func (noteRepo *NoteRepository) StoreClub(note *Note) (*Note, []error) {
+func (noteRepo *NoteRepository) StoreNote(note *Note) (*Note, []error) {
 	errs := noteRepo.conn.Create(note).GetErrors()
 	if len(errs) > 0 {
 		return nil, errs
