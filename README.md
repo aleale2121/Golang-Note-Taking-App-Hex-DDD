@@ -1,1 +1,1 @@
-# Golang-TODO-Hex-DDD
+# Golang-Note-Taking-App-Hex-DDD
