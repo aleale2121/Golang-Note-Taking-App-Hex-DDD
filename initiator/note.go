@@ -1,0 +1,47 @@
+package initiator
+
+import (
+	"fmt"
+	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/glue/routing"
+	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/handler/rest"
+	note "github.com/aleale2121/Golang-TODO-Hex-DDD/internal/module/user"
+	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/storage/postgress"
+	"github.com/aleale2121/Golang-TODO-Hex-DDD/platform/routers"
+	"github.com/jinzhu/gorm"
+	"os"
+)
+
+const (
+	postgresURL = "postgres://%s:%s@%s/%s?sslmode=disable"
+
+	dialect = "postgres"
+)
+
+func User(testInit bool) {
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASS")
+	dbHost := os.Getenv("DB_HOST")
+	dbName := os.Getenv("DB_NAME")
+	dbURL := fmt.Sprintf(postgresURL, dbUser, dbPass, dbHost, dbName)
+	dbConn, err := gorm.Open(dialect, dbURL)
+	if dbConn != nil {
+		defer dbConn.Close()
+	}
+	if err != nil {
+		panic(err)
+	}
+	postgresUser := postgress.NewNoteRepository(dbConn)
+	useCase := note.NewService(*postgresUser)
+	handler := rest.NewNoteHandler(useCase)
+	router := routing.NoteRouting(handler)
+
+	host := os.Getenv("HOST")
+	port := os.Getenv("HOST_PORT")
+	server := routers.NewRouting(host, port, router)
+	if testInit {
+		fmt.Println("Initialize test mode Finished!")
+		os.Exit(0)
+	}
+
+	server.Serve()
+}

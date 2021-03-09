@@ -1,14 +1,9 @@
 package postgress
 
 import (
+	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/constant/model"
 	"github.com/jinzhu/gorm"
 )
-
-type Note struct {
-	ID     uint
-	Title  string
-	Detail string
-}
 
 type NoteRepository struct {
 	conn *gorm.DB
@@ -18,8 +13,8 @@ func NewNoteRepository(db *gorm.DB) *NoteRepository {
 	return &NoteRepository{db}
 }
 
-func (noteRepo *NoteRepository) Notes() ([]Note, []error) {
-	var notes []Note
+func (noteRepo *NoteRepository) Notes() ([]model.Note, []error) {
+	var notes []model.Note
 	errs := noteRepo.conn.Find(&notes).GetErrors()
 	if len(errs) > 0 {
 		return nil, errs
@@ -27,8 +22,8 @@ func (noteRepo *NoteRepository) Notes() ([]Note, []error) {
 	return notes, errs
 }
 
-func (noteRepo *NoteRepository) Note(id uint32) (*Note, []error) {
-	note := Note{}
+func (noteRepo *NoteRepository) Note(id uint32) (*model.Note, []error) {
+	note := model.Note{}
 	errs := noteRepo.conn.First(&note, id).GetErrors()
 	if len(errs) > 0 {
 		return nil, errs
@@ -36,7 +31,7 @@ func (noteRepo *NoteRepository) Note(id uint32) (*Note, []error) {
 	return &note, errs
 }
 
-func (noteRepo *NoteRepository) UpdateNote(note *Note) (*Note, []error) {
+func (noteRepo *NoteRepository) UpdateNote(note *model.Note) (*model.Note, []error) {
 	errs := noteRepo.conn.Save(note).GetErrors()
 	if len(errs) > 0 {
 		return nil, errs
@@ -44,7 +39,7 @@ func (noteRepo *NoteRepository) UpdateNote(note *Note) (*Note, []error) {
 	return note, errs
 }
 
-func (noteRepo *NoteRepository) DeleteNote(id uint32) (*Note, []error) {
+func (noteRepo *NoteRepository) DeleteNote(id uint32) (*model.Note, []error) {
 	note, errs := noteRepo.Note(id)
 	if len(errs) > 0 {
 		return nil, errs
@@ -56,7 +51,7 @@ func (noteRepo *NoteRepository) DeleteNote(id uint32) (*Note, []error) {
 	return note, errs
 }
 
-func (noteRepo *NoteRepository) StoreNote(note *Note) (*Note, []error) {
+func (noteRepo *NoteRepository) StoreNote(note *model.Note) (*model.Note, []error) {
 	errs := noteRepo.conn.Create(note).GetErrors()
 	if len(errs) > 0 {
 		return nil, errs

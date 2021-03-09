@@ -3,29 +3,25 @@ package rest
 import (
 	"context"
 	"encoding/json"
-	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/adding"
-	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/deleting"
+	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/constant/model"
+	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/module/user"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/entity"
-	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/listing"
-	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/updating"
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
+
 	"net/http"
 	"strconv"
 )
 
 type NoteHandler interface {
-	GetNotes(w http.ResponseWriter, r *http.Request)
-	GetNoteById(w http.ResponseWriter, r *http.Request)
-	AddNote(w http.ResponseWriter, r *http.Request)
-	DeleteNote(w http.ResponseWriter, r *http.Request)
-	EditNote(w http.ResponseWriter, r *http.Request)
+	GetNotes(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
+	GetNoteById(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
+	AddNote(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
+	DeleteNote(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
+	EditNote(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	MiddleWareValidateNote(next http.Handler) http.Handler
 }
 type noteHandler struct {
-	l listing.Service
-	a adding.Service
-	d deleting.Service
-	u updating.Service
+	useCase note.UseCase
 }
 
 type keyNote struct{}
@@ -45,18 +41,15 @@ func (n noteHandler) MiddleWareValidateNote(next http.Handler) http.Handler {
 	})
 }
 
-func NewNoteHandler(l listing.Service,
-	a adding.Service,
-	d deleting.Service,
-	u updating.Service) NoteHandler {
+func NewNoteHandler(useCase note.UseCase) NoteHandler {
 
-	return &noteHandler{l: l, a: a, d: d, u: u}
+	return &noteHandler{useCase: useCase}
 
 }
 
-func (n noteHandler) GetNotes(w http.ResponseWriter, r *http.Request) {
+func (n noteHandler) GetNotes(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json")
-	allNotes, err := n.l.GetAllNotes()
+	allNotes, err := n.useCase.GetAllNotes()
 
 	if err != nil {
 		http.Error(w, "Failed to get notes", http.StatusBadRequest)
@@ -65,16 +58,15 @@ func (n noteHandler) GetNotes(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(allNotes)
 }
 
-func (n noteHandler) GetNoteById(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	noteID, err := strconv.ParseUint(params["id"], 10, 64)
+func (n noteHandler) GetNoteById(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	noteID, err := strconv.ParseUint(ps.ByName("id"), 10, 64)
 	if err != nil || noteID == 0 {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	note, err := n.l.FindNoteByID(uint(noteID))
+	note, errs := n.useCase.FindNoteByID(uint(noteID))
 
-	if err != nil {
+	if len(errs) > 0 {
 		http.Error(w, "Failed to get notes", http.StatusBadRequest)
 		return
 	}
@@ -82,9 +74,9 @@ func (n noteHandler) GetNoteById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(note)
 }
 
-func (n noteHandler) AddNote(w http.ResponseWriter, r *http.Request) {
-	note := r.Context().Value(keyNote{}).(entity.Note)
-	if err := n.a.AddNote(note); err != nil {
+func (n noteHandler) AddNote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	note := r.Context().Value(keyNote{}).(model.Note)
+	if _, errs := n.useCase.AddNote(note); len(errs) > 0 {
 		http.Error(w, "Failed to add note", http.StatusBadRequest)
 		return
 	}
@@ -94,14 +86,14 @@ func (n noteHandler) AddNote(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (n noteHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	noteID, err := strconv.ParseUint(params["id"], 10, 64)
+func (n noteHandler) DeleteNote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	noteID, err := strconv.ParseUint(ps.ByName("id"), 10, 64)
 	if err != nil || noteID == 0 {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	if err := n.d.DeleteNote(uint(noteID)); err != nil {
+	if _, errs := n.useCase.DeleteNote(uint(noteID)); len(errs) > 0 {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -109,22 +101,21 @@ func (n noteHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode("note deleted.")
 }
 
-func (n noteHandler) EditNote(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	noteID, err := strconv.ParseUint(params["id"], 10, 64)
+func (n noteHandler) EditNote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	noteID, err := strconv.ParseUint(ps.ByName("id"), 10, 64)
 	if err != nil || noteID == 0 {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	note := r.Context().Value(keyNote{}).(entity.Note)
+	note := r.Context().Value(keyNote{}).(model.Note)
 
-	_, err = n.l.FindNoteByID(uint(noteID))
-	if err != nil {
+	_, errs := n.useCase.FindNoteByID(uint(noteID))
+	if len(errs) > 0 {
 		http.Error(w, "Failed to get note", http.StatusBadRequest)
 		return
 	}
-	err = n.u.UpdateNote(note)
-	if err != nil {
+	_, errs = n.useCase.UpdateNote(note)
+	if len(errs) > 0 {
 		http.Error(w, "Failed to get note", http.StatusBadRequest)
 		return
 	}
