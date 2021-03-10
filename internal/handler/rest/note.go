@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/constant/model"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/module/user"
-	"github.com/aleale2121/Golang-TODO-Hex-DDD/pkg/entity"
 	"github.com/julienschmidt/httprouter"
-
 	"net/http"
 	"strconv"
 )
@@ -18,7 +16,7 @@ type NoteHandler interface {
 	AddNote(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	DeleteNote(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	EditNote(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
-	MiddleWareValidateNote(next http.Handler) http.Handler
+	MiddleWareValidateNote(next httprouter.Handle) httprouter.Handle
 }
 type noteHandler struct {
 	useCase note.UseCase
@@ -26,19 +24,18 @@ type noteHandler struct {
 
 type keyNote struct{}
 
-func (n noteHandler) MiddleWareValidateNote(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		note := entity.Note{}
-		err := note.FromJSON(r.Body)
+func (n noteHandler) MiddleWareValidateNote(next httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		noteX := model.Note{}
+		err := noteX.FromJSON(r.Body)
 		if err != nil {
-			http.Error(w, "Error reading note", http.StatusBadRequest)
+			http.Error(w, "Error reading noteX", http.StatusBadRequest)
 			return
 		}
-		ctx := context.WithValue(r.Context(), keyNote{}, note)
+		ctx := context.WithValue(r.Context(), keyNote{}, noteX)
 		r = r.WithContext(ctx)
-		next.ServeHTTP(w, r)
-
-	})
+		next(w, r, ps)
+	}
 }
 
 func NewNoteHandler(useCase note.UseCase) NoteHandler {
@@ -64,25 +61,25 @@ func (n noteHandler) GetNoteById(w http.ResponseWriter, _ *http.Request, ps http
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	note, errs := n.useCase.FindNoteByID(uint(noteID))
+	noteByID, errs := n.useCase.FindNoteByID(uint(noteID))
 
 	if len(errs) > 0 {
 		http.Error(w, "Failed to get notes", http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(note)
+	json.NewEncoder(w).Encode(noteByID)
 }
 
 func (n noteHandler) AddNote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	note := r.Context().Value(keyNote{}).(model.Note)
-	if _, errs := n.useCase.AddNote(note); len(errs) > 0 {
-		http.Error(w, "Failed to add note", http.StatusBadRequest)
+	noteById := r.Context().Value(keyNote{}).(model.Note)
+	if _, errs := n.useCase.AddNote(noteById); len(errs) > 0 {
+		http.Error(w, "Failed to add noteById", http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode("New note added.")
+	json.NewEncoder(w).Encode("New noteById added.")
 
 }
 
@@ -107,18 +104,18 @@ func (n noteHandler) EditNote(w http.ResponseWriter, r *http.Request, ps httprou
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	note := r.Context().Value(keyNote{}).(model.Note)
+	noteById := r.Context().Value(keyNote{}).(model.Note)
 
 	_, errs := n.useCase.FindNoteByID(uint(noteID))
 	if len(errs) > 0 {
-		http.Error(w, "Failed to get note", http.StatusBadRequest)
+		http.Error(w, "Failed to get noteById", http.StatusBadRequest)
 		return
 	}
-	_, errs = n.useCase.UpdateNote(note)
+	_, errs = n.useCase.UpdateNote(noteById)
 	if len(errs) > 0 {
-		http.Error(w, "Failed to get note", http.StatusBadRequest)
+		http.Error(w, "Failed to get noteById", http.StatusBadRequest)
 		return
 	}
-	json.NewEncoder(w).Encode(" note updated.")
+	json.NewEncoder(w).Encode(" noteById updated.")
 
 }
