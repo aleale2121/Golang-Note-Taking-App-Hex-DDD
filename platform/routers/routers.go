@@ -48,8 +48,10 @@ func (r *routing) Serve() {
 		}
 	}
 	addr := fmt.Sprintf("%s:%s", r.host, r.port)
+	fmt.Println(addr)
 	err := http.ListenAndServe(addr, httpRouter)
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("server started at %s:%s", r.host, r.port)
 }

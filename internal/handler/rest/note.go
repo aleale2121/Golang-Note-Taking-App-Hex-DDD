@@ -46,9 +46,9 @@ func NewNoteHandler(useCase note.UseCase) NoteHandler {
 
 func (n noteHandler) GetNotes(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json")
-	allNotes, err := n.useCase.GetAllNotes()
+	allNotes, errs := n.useCase.GetAllNotes()
 
-	if err != nil {
+	if len(errs) > 0 {
 		http.Error(w, "Failed to get notes", http.StatusBadRequest)
 		return
 	}

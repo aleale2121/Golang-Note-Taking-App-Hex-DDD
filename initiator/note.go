@@ -9,7 +9,8 @@ import (
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/storage/postgress"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/platform/routers"
 	"github.com/jinzhu/gorm"
-	"os"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -27,11 +28,12 @@ func createTable(dbConn *gorm.DB) []error {
 	return nil
 }
 func User(testInit bool) {
-	dbUser := os.Getenv("DB_USER")
-	dbPass := os.Getenv("DB_PASS")
-	dbHost := os.Getenv("DB_HOST")
-	dbName := os.Getenv("DB_NAME")
-	dbURL := fmt.Sprintf(postgresURL, dbUser, dbPass, dbHost, dbName)
+	//dbUser := os.Getenv("DB_USER")
+	//dbPass := os.Getenv("DB_PASS")
+	//dbHost := os.Getenv("DB_HOST")
+	//dbName := os.Getenv("DB_NAME")
+	dbURL := fmt.Sprintf(postgresURL, "postgres", "root", "localhost", "Note")
+
 	dbConn, err := gorm.Open(dialect, dbURL)
 	if dbConn != nil {
 		defer dbConn.Close()
@@ -39,18 +41,18 @@ func User(testInit bool) {
 	if err != nil {
 		panic(err)
 	}
-	createTable(dbConn)
+	//createTable(dbConn)
 	postgresUser := postgress.NewNoteRepository(dbConn)
 	useCase := note.NewService(*postgresUser)
 	handler := rest.NewNoteHandler(useCase)
 	router := routing.NoteRouting(handler)
 
-	host := os.Getenv("HOST")
-	port := os.Getenv("HOST_PORT")
-	server := routers.NewRouting(host, port, router)
+	//host := os.Getenv("HOST")
+	//port := os.Getenv("HOST_PORT")
+	server := routers.NewRouting("localhost", "8080", router)
 	if testInit {
 		fmt.Println("Initialize test mode Finished!")
-		os.Exit(0)
+		//os.Exit(0)
 	}
 
 	server.Serve()
