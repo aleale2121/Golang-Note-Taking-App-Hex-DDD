@@ -2,6 +2,7 @@ package initiator
 
 import (
 	"fmt"
+	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/constant/model"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/glue/routing"
 	"github.com/aleale2121/Golang-TODO-Hex-DDD/internal/handler/rest"
 	note "github.com/aleale2121/Golang-TODO-Hex-DDD/internal/module/user"
@@ -17,6 +18,14 @@ const (
 	dialect = "postgres"
 )
 
+func createTable(dbConn *gorm.DB) []error {
+	dbConn.Debug().DropTableIfExists(&model.Note{})
+	errs := dbConn.Debug().CreateTable(&model.Note{}).GetErrors()
+	if errs != nil {
+		return errs
+	}
+	return nil
+}
 func User(testInit bool) {
 	dbUser := os.Getenv("DB_USER")
 	dbPass := os.Getenv("DB_PASS")
@@ -30,6 +39,7 @@ func User(testInit bool) {
 	if err != nil {
 		panic(err)
 	}
+	createTable(dbConn)
 	postgresUser := postgress.NewNoteRepository(dbConn)
 	useCase := note.NewService(*postgresUser)
 	handler := rest.NewNoteHandler(useCase)
