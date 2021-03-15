@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package note;
+option go_package = ".;note";
+
+service NoteService{
+  rpc CreateNote(CreateNoteRequest) returns (CreateNoteResponse);
+  rpc GetNote(GetNoteRequest) returns (GetNoteResponse);
+  rpc ListNotes(ListNoteRequest) returns (ListNoteResponse);
+  rpc UpdateNote(UpdateNoteRequest) returns (UpdateNoteResponse);
+  rpc DeleteNote(DeleteNoteRequest) returns (DeleteNoteResponse);
+}
+
+message Note {
+  uint32 id = 1;
+  string title = 2;
+  string detail = 3;
+}
+message CreateNoteRequest {
+  Note note = 1;
+}
+message CreateNoteResponse {
+  uint32 id = 1;
+}
+
+message GetNoteRequest {
+  uint32 id = 1;
+}
+
+message GetNoteResponse {
+  Note note = 1;
+}
+message ListNoteRequest {}
+
+message ListNoteResponse {
+  repeated Note notes = 1;
+}
+
+message UpdateNoteRequest {
+  Note note = 1;
+}
+
+message UpdateNoteResponse {}
+
+message DeleteNoteRequest {
+  uint32 id = 1;
+}
+
+message DeleteNoteResponse {}

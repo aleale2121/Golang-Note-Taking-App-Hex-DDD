@@ -53,5 +53,5 @@ func (r *routing) Serve() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("server started at %s:%s", r.host, r.port)
+	fmt.Printf("grpc-server started at %s:%s", r.host, r.port)
 }

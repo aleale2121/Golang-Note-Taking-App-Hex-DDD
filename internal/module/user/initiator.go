@@ -16,39 +16,39 @@ type UseCase interface {
 	DeleteNote(uint) (*model.Note, []error)
 }
 
-type service struct {
+type Service struct {
 	notePostgres postgress.NoteRepository
 }
 
-func (s service) GetAllNotes() ([]model.Note, []error) {
+func NewService(notePostgres postgress.NoteRepository) UseCase {
+	return &Service{
+		notePostgres: notePostgres,
+	}
+}
+
+func (s Service) GetAllNotes() ([]model.Note, []error) {
 	return s.notePostgres.Notes()
 
 }
 
-func (s service) FindNoteByID(u uint) (*model.Note, []error) {
+func (s Service) FindNoteByID(u uint) (*model.Note, []error) {
 	return s.notePostgres.Note(uint32(u))
 }
 
-func (s service) AddNote(note model.Note) (*model.Note, []error) {
+func (s Service) AddNote(note model.Note) (*model.Note, []error) {
 	if note.Title == "" || note.Detail == "" {
 		return nil, []error{fmt.Errorf("invalid input")}
 	}
 	return s.notePostgres.StoreNote(&note)
 }
 
-func (s service) UpdateNote(note model.Note) (*model.Note, []error) {
+func (s Service) UpdateNote(note model.Note) (*model.Note, []error) {
 	if note.Title == "" || note.Detail == "" {
 		return nil, []error{fmt.Errorf("invalid input")}
 	}
 	return s.notePostgres.UpdateNote(&note)
 }
 
-func (s service) DeleteNote(u uint) (*model.Note, []error) {
+func (s Service) DeleteNote(u uint) (*model.Note, []error) {
 	return s.notePostgres.DeleteNote(uint32(u))
-}
-
-func NewService(notePostgres postgress.NoteRepository) UseCase {
-	return &service{
-		notePostgres: notePostgres,
-	}
 }
